@@ -74,7 +74,8 @@ systemd:
           --pod-manifest-path=/etc/kubernetes/manifests \
           --volume-plugin-dir=/var/lib/kubelet/volumeplugins \
           --authentication-token-webhook \
-          --authorization-mode=Webhook
+          --authorization-mode=Webhook \
+          --allow-privileged
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
         Restart=always
         RestartSec=5

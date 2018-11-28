@@ -1,6 +1,6 @@
 # Bare-Metal
 
-In this tutorial, we'll network boot and provision a Kubernetes v1.11.0 cluster on bare-metal with Container Linux.
+In this tutorial, we'll network boot and provision a Kubernetes v1.11.2 cluster on bare-metal with Container Linux.
 
 First, we'll deploy a [Matchbox](https://github.com/coreos/matchbox) service and setup a network boot environment. Then, we'll declare a Kubernetes cluster using the Typhoon Terraform module and power on machines. On PXE boot, machines will install Container Linux to disk, reboot into the disk install, and provision themselves as Kubernetes controllers or workers via Ignition.
 
@@ -12,7 +12,7 @@ Controllers are provisioned to run an `etcd-member` peer and a `kubelet` service
 * PXE-enabled [network boot](https://coreos.com/matchbox/docs/latest/network-setup.html) environment
 * Matchbox v0.6+ deployment with API enabled
 * Matchbox credentials `client.crt`, `client.key`, `ca.crt`
-* Terraform v0.11.x and [terraform-provider-matchbox](https://github.com/coreos/terraform-provider-matchbox) installed locally
+* Terraform v0.11.x, [terraform-provider-matchbox](https://github.com/coreos/terraform-provider-matchbox), and [terraform-provider-ct](https://github.com/coreos/terraform-provider-ct) installed locally
 
 ## Machines
 
@@ -121,6 +121,14 @@ tar xzf terraform-provider-matchbox-v0.2.2-linux-amd64.tar.gz
 sudo mv terraform-provider-matchbox-v0.2.2-linux-amd64/terraform-provider-matchbox /usr/local/bin/
 ```
 
+Add the [terraform-provider-ct](https://github.com/coreos/terraform-provider-ct) plugin binary for your system.
+
+```sh
+wget https://github.com/coreos/terraform-provider-ct/releases/download/v0.2.1/terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
+tar xzf terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
+sudo mv terraform-provider-ct-v0.2.1-linux-amd64/terraform-provider-ct /usr/local/bin/
+```
+
 Add the plugin to your `~/.terraformrc`.
 
 ```
@@ -174,7 +182,7 @@ Define a Kubernetes cluster using the module `bare-metal/container-linux/kuberne
 
 ```tf
 module "bare-metal-mercury" {
-  source = "git::https://github.com/poseidon/typhoon//bare-metal/container-linux/kubernetes?ref=v1.11.0"
+  source = "git::https://github.com/poseidon/typhoon//bare-metal/container-linux/kubernetes?ref=v1.11.2"
   
   providers = {
     local = "local.default"
@@ -283,9 +291,9 @@ Apply complete! Resources: 55 added, 0 changed, 0 destroyed.
 To watch the install to disk (until machines reboot from disk), SSH to port 2222.
 
 ```
-# before v1.11.0
+# before v1.11.2
 $ ssh debug@node1.example.com
-# after v1.11.0
+# after v1.11.2
 $ ssh -p 2222 core@node1.example.com
 ```
 
@@ -310,9 +318,9 @@ bootkube[5]: Tearing down temporary bootstrap control plane...
 $ export KUBECONFIG=/home/user/.secrets/clusters/mercury/auth/kubeconfig
 $ kubectl get nodes
 NAME                STATUS    AGE       VERSION
-node1.example.com   Ready     11m       v1.11.0
-node2.example.com   Ready     11m       v1.11.0
-node3.example.com   Ready     11m       v1.11.0
+node1.example.com   Ready     11m       v1.11.2
+node2.example.com   Ready     11m       v1.11.2
+node3.example.com   Ready     11m       v1.11.2
 ```
 
 List the pods.
@@ -373,6 +381,7 @@ Check the [variables.tf](https://github.com/poseidon/typhoon/blob/master/bare-me
 | install_disk | Disk device where Container Linux should be installed | "/dev/sda" | "/dev/sdb" |
 | networking | Choice of networking provider | "calico" | "calico" or "flannel" |
 | network_mtu | CNI interface MTU (calico-only) | 1480 | - | 
+| clc_snippets | Map from machine names to lists of Container Linux Config snippets | {} | [example](/advanced/customization/#usage) |
 | network_ip_autodetection_method | Method to detect host IPv4 address (calico-only) | first-found | can-reach=10.0.0.1 |
 | pod_cidr | CIDR IPv4 range to assign to Kubernetes pods | "10.2.0.0/16" | "10.22.0.0/16" |
 | service_cidr | CIDR IPv4 range to assign to Kubernetes services | "10.3.0.0/16" | "10.3.0.0/24" |

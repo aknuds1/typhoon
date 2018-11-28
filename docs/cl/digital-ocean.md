@@ -1,6 +1,6 @@
 # Digital Ocean
 
-In this tutorial, we'll create a Kubernetes v1.11.2 cluster on DigitalOcean with Container Linux.
+In this tutorial, we'll create a Kubernetes v1.12.3 cluster on DigitalOcean with Container Linux.
 
 We'll declare a Kubernetes cluster using the Typhoon Terraform module. Then apply the changes to create controller droplets, worker droplets, DNS records, tags, and TLS assets.
 
@@ -18,26 +18,18 @@ Install [Terraform](https://www.terraform.io/downloads.html) v0.11.x on your sys
 
 ```sh
 $ terraform version
-Terraform v0.11.1
+Terraform v0.11.7
 ```
 
-Add the [terraform-provider-ct](https://github.com/coreos/terraform-provider-ct) plugin binary for your system.
+Add the [terraform-provider-ct](https://github.com/coreos/terraform-provider-ct) plugin binary for your system to `~/.terraform.d/plugins/`, noting the final name.
 
 ```sh
 wget https://github.com/coreos/terraform-provider-ct/releases/download/v0.2.1/terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
 tar xzf terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
-sudo mv terraform-provider-ct-v0.2.1-linux-amd64/terraform-provider-ct /usr/local/bin/
+mv terraform-provider-ct-v0.2.1-linux-amd64/terraform-provider-ct ~/.terraform.d/plugins/terraform-provider-ct_v0.2.1
 ```
 
-Add the plugin to your `~/.terraformrc`.
-
-```
-providers {
-  ct = "/usr/local/bin/terraform-provider-ct"
-}
-```
-
-Read [concepts](../architecture/concepts.md) to learn about Terraform, modules, and organizing resources. Change to your infrastructure repository (e.g. `infra`).
+Read [concepts](/architecture/concepts/) to learn about Terraform, modules, and organizing resources. Change to your infrastructure repository (e.g. `infra`).
 
 ```
 cd infra/clusters
@@ -58,9 +50,13 @@ Configure the DigitalOcean provider to use your token in a `providers.tf` file.
 
 ```tf
 provider "digitalocean" {
-  version = "0.1.3"
+  version = "1.0.0"
   token = "${chomp(file("~/.config/digital-ocean/token"))}"
   alias = "default"
+}
+
+provider "ct" {
+  version = "0.2.1"
 }
 
 provider "local" {
@@ -90,7 +86,7 @@ Define a Kubernetes cluster using the module `digital-ocean/container-linux/kube
 
 ```tf
 module "digital-ocean-nemo" {
-  source = "git::https://github.com/poseidon/typhoon//digital-ocean/container-linux/kubernetes?ref=v1.11.2"
+  source = "git::https://github.com/poseidon/typhoon//digital-ocean/container-linux/kubernetes?ref=v1.12.3"
   
   providers = {
     digitalocean = "digitalocean.default"
@@ -163,10 +159,10 @@ In 3-6 minutes, the Kubernetes cluster will be ready.
 ```
 $ export KUBECONFIG=/home/user/.secrets/clusters/nemo/auth/kubeconfig
 $ kubectl get nodes
-NAME             STATUS    AGE       VERSION
-10.132.110.130   Ready     10m       v1.11.2
-10.132.115.81    Ready     10m       v1.11.2
-10.132.124.107   Ready     10m       v1.11.2
+NAME               STATUS  ROLES              AGE  VERSION
+nemo-controller-0  Ready   controller,master  10m  v1.12.3
+nemo-worker-0      Ready   node               10m  v1.12.3
+nemo-worker-1      Ready   node               10m  v1.12.3
 ```
 
 List the pods.
@@ -174,24 +170,25 @@ List the pods.
 ```
 NAMESPACE     NAME                                       READY     STATUS    RESTARTS   AGE
 kube-system   coredns-1187388186-ld1j7                   1/1       Running   0          11m
+kube-system   coredns-1187388186-rdhf7                   1/1       Running   0          11m
+kube-system   flannel-1cq1v                              2/2       Running   0          11m
+kube-system   flannel-hq9t0                              2/2       Running   1          11m
+kube-system   flannel-v0g9w                              2/2       Running   0          11m
 kube-system   kube-apiserver-n10qr                       1/1       Running   0          11m
 kube-system   kube-controller-manager-3271970485-37gtw   1/1       Running   1          11m
 kube-system   kube-controller-manager-3271970485-p52t5   1/1       Running   0          11m
-kube-system   kube-flannel-1cq1v                         2/2       Running   0          11m
-kube-system   kube-flannel-hq9t0                         2/2       Running   1          11m
-kube-system   kube-flannel-v0g9w                         2/2       Running   0          11m
 kube-system   kube-proxy-6kxjf                           1/1       Running   0          11m
 kube-system   kube-proxy-fh3td                           1/1       Running   0          11m
 kube-system   kube-proxy-k35rc                           1/1       Running   0          11m
 kube-system   kube-scheduler-3895335239-2bc4c            1/1       Running   0          11m
 kube-system   kube-scheduler-3895335239-b7q47            1/1       Running   1          11m
 kube-system   pod-checkpointer-pr1lq                     1/1       Running   0          11m
-kube-system   pod-checkpointer-pr1lq-10.132.115.81       1/1       Running   0          10m
+kube-system   pod-checkpointer-pr1lq-nemo-controller-0   1/1       Running   0          10m
 ```
 
 ## Going Further
 
-Learn about [maintenance](../topics/maintenance.md) and [addons](../addons/overview.md).
+Learn about [maintenance](/topics/maintenance/) and [addons](/addons/overview/).
 
 !!! note
     On Container Linux clusters, install the `CLUO` addon to coordinate reboots and drains when nodes auto-update. Otherwise, updates may not be applied until the next reboot.
@@ -254,8 +251,8 @@ Digital Ocean requires the SSH public key be uploaded to your account, so you ma
 | controller_type | Droplet type for controllers | s-2vcpu-2gb | s-2vcpu-2gb, s-2vcpu-4gb, s-4vcpu-8gb, ... |
 | worker_type | Droplet type for workers | s-1vcpu-1gb | s-1vcpu-1gb, s-1vcpu-2gb, s-2vcpu-2gb, ... |
 | image | Container Linux image for instances | "coreos-stable" | coreos-stable, coreos-beta, coreos-alpha |
-| controller_clc_snippets | Controller Container Linux Config snippets | [] | |
-| worker_clc_snippets | Worker Container Linux Config snippets | [] | |
+| controller_clc_snippets | Controller Container Linux Config snippets | [] | [example](/advanced/customization/) |
+| worker_clc_snippets | Worker Container Linux Config snippets | [] | [example](/advanced/customization/) |
 | pod_cidr | CIDR IPv4 range to assign to Kubernetes pods | "10.2.0.0/16" | "10.22.0.0/16" |
 | service_cidr | CIDR IPv4 range to assign to Kubernetes services | "10.3.0.0/16" | "10.3.0.0/24" |
 | cluster_domain_suffix | FQDN suffix for Kubernetes services answered by coredns. | "cluster.local" | "k8s.example.com" |

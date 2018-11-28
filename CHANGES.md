@@ -2,6 +2,137 @@
 
 Notable changes between versions.
 
+## Latest
+
+* Kubernetes [v1.12.3](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.12.md#v1123)
+* Add `enable_reporting` variable (default "false") to provide upstreams with usage data ([#345](https://github.com/poseidon/typhoon/pull/345))
+* Change kube-apiserver `--kubelet-preferred-address-types` to InternalIP,ExternalIP,Hostname
+* Update Calico from v3.3.0 to [v3.3.1](https://docs.projectcalico.org/v3.3/releases/)
+  * Disable Felix usage reporting by default ([#345](https://github.com/poseidon/typhoon/pull/345))
+* Improve flannel manifests
+  * [Rename](https://github.com/poseidon/terraform-render-bootkube/commit/d045a8e6b8eccfbb9d69bb51953b5a93d23f67f7) `kube-flannel` DaemonSet to `flannel` and `kube-flannel-cfg` ConfigMap to `flannel-config` 
+  * [Drop](https://github.com/poseidon/terraform-render-bootkube/commit/39f9afb3360ec642e5b98457c8bd07eda35b6c96) unused mounts and add a CPU resource request
+* Update CoreDNS from v1.2.4 to [v1.2.6](https://coredns.io/2018/11/05/coredns-1.2.6-release/)
+  * Enable CoreDNS `loop` and `loadbalance` plugins ([#340](https://github.com/poseidon/typhoon/pull/340))
+* Fix pod-checkpointer log noise and checkpointable pods detection ([#346](https://github.com/poseidon/typhoon/pull/346))
+* Use kubernetes-incubator/bootkube v0.14.0
+* [Recommend](https://typhoon.psdn.io/topics/maintenance/#terraform-plugins-directory) switching from `~/.terraformrc` to the Terraform [third-party plugins](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) directory `~/.terraform.d/plugins/`.
+  * Allows pinning `terraform-provider-ct` and `terraform-provider-matchbox` versions
+  * Improves safety of later plugin version migrations
+
+#### Azure
+
+* Use eviction policy `Delete` for `Low` priority virtual machine scale set workers ([#343](https://github.com/poseidon/typhoon/pull/343))
+  * Fix issue where Azure defaults to `Deallocate` eviction policy, which required manually restarting deallocated instances. `Delete` policy aligns Azure with AWS and GCP behavior.
+  * Require `terraform-provider-azurerm` v1.19+ (action required)
+
+#### Bare-Metal
+
+* Add Kubelet `/etc/iscsi` and `iscsadm` mounts on bare-metal for iSCSI ([#103](https://github.com/poseidon/typhoon/pull/103))
+
+#### Addons
+
+* Update nginx-ingress from v0.20.0 to v0.21.0
+* Update Prometheus from v2.4.3 to v2.5.0
+* Update Grafana from v5.3.2 to v5.3.4
+
+## v1.12.2
+
+* Kubernetes [v1.12.2](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.12.md#v1122)
+* Update CoreDNS from 1.2.2 to [1.2.4](https://github.com/coredns/coredns/releases/tag/v1.2.4)
+* Update Calico from v3.2.3 to [v3.3.0](https://docs.projectcalico.org/v3.3/releases/)
+* Disable Kubelet read-only port ([#324](https://github.com/poseidon/typhoon/pull/324))
+* Fix CoreDNS AntiAffinity spec to prefer spreading replicas
+* Ignore controller node user-data changes ([#335](https://github.com/poseidon/typhoon/pull/335))
+  * Once all managed clusters use v1.12.2, it is possible to update `terraform-provider-ct`
+
+#### AWS
+
+* Add `disk_iops` variable for EBS volume IOPS ([#314](https://github.com/poseidon/typhoon/pull/314))
+
+#### Azure
+
+* Use new `azurerm_network_interface_backend_address_pool_association` ([#332](https://github.com/poseidon/typhoon/pull/332))
+  * Require `terraform-provider-azurerm` v1.17+ (action required)
+* Add `primary` field to `ip_configuration` needed by v1.17+ ([#331](https://github.com/poseidon/typhoon/pull/331))
+
+#### DigitalOcean
+
+* Add AAAA DNS records resolving to worker nodes ([#333](https://github.com/poseidon/typhoon/pull/333))
+  * Hosting IPv6 apps requires editing nginx-ingress with `hostNetwork: true`
+
+#### Google Cloud
+
+* Add an IPv6 address and IPv6 forwarding rules for load balancing IPv6 Ingress ([#334](https://github.com/poseidon/typhoon/pull/334))
+  * Add `ingress_static_ipv6` output variable for use in AAAA DNS records
+  * Allow serving IPv6 applications via Kubernetes Ingress
+
+#### Addons
+
+* Configure Heapster to scrape Kubelets with bearer token auth ([#323](https://github.com/poseidon/typhoon/pull/323))
+* Update Grafana from v5.3.1 to v5.3.2
+
+## v1.12.1
+
+* Kubernetes [v1.12.1](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.12.md#v1121)
+* Update etcd from v3.3.9 to [v3.3.10](https://github.com/etcd-io/etcd/blob/master/CHANGELOG-3.3.md#v3310-2018-10-10)
+* Update CoreDNS from 1.1.3 to [1.2.2](https://github.com/coredns/coredns/releases/tag/v1.2.2)
+* Update Calico from v3.2.1 to [v3.2.3](https://docs.projectcalico.org/v3.2/releases/)
+* Raise scheduler and controller-manager replicas to the larger of 2 or the number of controller nodes ([#312](https://github.com/poseidon/typhoon/pull/312))
+  * Single-controller clusters continue to run 2 replicas as before
+* Raise default CoreDNS replicas to the larger of 2 or the number of controller nodes ([#313](https://github.com/poseidon/typhoon/pull/313))
+  * Add AntiAffinity preferred rule to favor spreading CoreDNS pods
+* Annotate control plane and addon containers to use the Docker runtime seccomp profile ([#319](https://github.com/poseidon/typhoon/pull/319))
+  * Override Kubernetes default behavior that starts containers with `seccomp=unconfined`
+
+#### Azure
+
+* Remove `admin_password` field (disabled) since it is now optional
+  * Require `terraform-provider-azurerm` v1.16+ (action required)
+
+#### Bare-Metal
+
+* Add support for `cached_install` mode with Flatcar Linux ([#315](https://github.com/poseidon/typhoon/pull/315))
+
+#### DigitalOcean
+
+* Require `terraform-provider-digitalocean` v1.0+ (action required)
+
+#### Addons
+
+* Update nginx-ingress from v0.19.0 to v0.20.0
+* Update Prometheus from v2.3.2 to v2.4.3
+* Update Grafana from v5.2.4 to v5.3.1
+
+## v1.11.3
+
+* Kubernetes [v1.11.3](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#v1113)
+* Introduce Typhoon for Azure as alpha ([#288](https://github.com/poseidon/typhoon/pull/288))
+  * Special thanks @justaugustus for an earlier variant
+* Update Calico from v3.1.3 to v3.2.1 ([#278](https://github.com/poseidon/typhoon/pull/278))
+
+#### AWS
+
+* Remove firewall rule allowing ICMP packets to nodes ([#285](https://github.com/poseidon/typhoon/pull/285))
+
+#### Bare-Metal
+
+* Remove `controller_networkds` and `worker_networkds` variables. Use Container Linux Config snippets [#277](https://github.com/poseidon/typhoon/pull/277)
+
+#### Google Cloud
+
+* Fix firewall to allow etcd client port 2379 traffic between controller nodes ([#287](https://github.com/poseidon/typhoon/pull/287))
+  * kube-apiservers were only able to connect to their node's local etcd peer. While master node outages were tolerated, reaching a healthy peer took longer than neccessary in some cases
+  * Reduce time needed to bootstrap the cluster
+* Remove firewall rule allowing workers to access Nginx Ingress health check ([#284](https://github.com/poseidon/typhoon/pull/284))
+  * Nginx Ingress addon no longer uses hostNetwork, Prometheus scrapes via CNI network
+
+#### Addons
+
+* Update nginx-ingress from 0.17.1 to 0.19.0
+* Update kube-state-metrics from v1.3.1 to v1.4.0
+* Update Grafana from 5.2.2 to 5.2.4
+
 ## v1.11.2
 
 * Kubernetes [v1.11.2](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#v1112)
@@ -14,11 +145,12 @@ Notable changes between versions.
 * Introduce [Container Linux Config snippets](https://typhoon.psdn.io/advanced/customization/#container-linux) on bare-metal
   * Validate and additively merge custom Container Linux Configs during terraform plan
   * Define files, systemd units, dropins, networkd configs, mounts, users, and more
-  * [Require](https://typhoon.psdn.io/cl/bare-metal/#terraform-setup) `terraform-provider-ct` plugin v0.2.1 (action required!)
+  * [Require](https://typhoon.psdn.io/cl/bare-metal/#terraform-setup) `terraform-provider-ct` plugin v0.2.1 (**action required!**)
 
 #### Addons
 
 * Update nginx-ingress from 0.16.2 to 0.17.1
+* Add nginx-ingress manifests for bare-metal
 * Update Grafana from 5.2.1 to 5.2.2
 * Update heapster from v1.5.3 to v1.5.4
 

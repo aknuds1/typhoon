@@ -18,7 +18,7 @@ module "google-cloud-yavin" {
 }
 
 module "bare-metal-mercury" {
-  source = "git::https://github.com/poseidon/typhoon//bare-metal/container-linux/kubernetes?ref=v1.11.2"
+  source = "git::https://github.com/poseidon/typhoon//bare-metal/container-linux/kubernetes?ref=v1.12.3"
   ...
 }
 ```
@@ -40,7 +40,7 @@ Blue-green replacement reduces risk for clusters running critical applications. 
 Blue-green replacement provides some subtler benefits as well:
 
 * Encourages investment in tooling for traffic migration and failovers. When a cluster incident arises, shifting applications to a healthy cluster will be second nature.
-* Discourages reliance on in-place opqaue state. Retain confidence in your ability to create infrastructure from scratch.
+* Discourages reliance on in-place opaque state. Retain confidence in your ability to create infrastructure from scratch.
 * Allows Typhoon to make architecture changes between releases and eases the burden on Typhoon maintainers. By contrast, distros promising in-place upgrades get stuck with their mistakes or require complex and error-prone migrations.
 
 ### Bare-Metal
@@ -126,3 +126,70 @@ Typhoon supports multi-controller clusters, so it is possible to upgrade a clust
 
 !!! warning
     Typhoon does not support or document node replacement as an upgrade strategy. It limits Typhoon's ability to make infrastructure and architectural changes between tagged releases. 
+
+### Terraform Plugins Directory
+
+Use the Terraform 3rd-party [plugin directory](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) `~/.terraform.d/plugins` to keep versioned copies of the `terraform-provider-ct` and `terraform-provider-matchbox` plugins. The plugin directory replaces the `~/.terraformrc` file to allow 3rd party plugins to be defined and versioned independently (rather than globally).
+
+```
+# ~/.terraformrc (DEPRECATED)
+providers {
+  ct = "/usr/local/bin/terraform-provider-ct"
+  matchbox = "/usr/local/bin/terraform-provider-matchbox"
+}
+```
+
+Migrate to using the Terraform plugin directory. Move `~/.terraformrc` to a backup location.
+
+```
+mv ~/.terraformrc ~/.terraform-backup
+```
+
+Add the [terraform-provider-ct](https://github.com/coreos/terraform-provider-ct) plugin binary for your system to `~/.terraform.d/plugins/`. Download the **same version** of `terraform-provider-ct` you were using with `~/.terraformrc`, updating only be done as a followup and is **only** safe for v1.12.2+ clusters!
+
+```sh
+wget https://github.com/coreos/terraform-provider-ct/releases/download/v0.2.1/terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
+tar xzf terraform-provider-ct-v0.2.1-linux-amd64.tar.gz
+mv terraform-provider-ct-v0.2.1-linux-amd64/terraform-provider-ct ~/.terraform.d/plugins/terraform-provider-ct_v0.2.1
+```
+
+If you use bare-metal, add the [terraform-provider-matchbox](https://github.com/coreos/terraform-provider-matchbox) plugin binary for your system to `~/.terraform.d/plugins/`, noting the versioned name.
+
+```sh
+wget https://github.com/coreos/terraform-provider-matchbox/releases/download/v0.2.2/terraform-provider-matchbox-v0.2.2-linux-amd64.tar.gz
+tar xzf terraform-provider-matchbox-v0.2.2-linux-amd64.tar.gz
+mv terraform-provider-matchbox-v0.2.2-linux-amd64/terraform-provider-matchbox ~/.terraform.d/plugins/terraform-provider-matchbox_v0.2.2
+```
+
+Binary names are versioned. This enables the ability to upgrade different plugins and have clusters pin different versions.
+
+```
+$ tree ~/.terraform.d/
+/home/user/.terraform.d/
+└── plugins
+    ├── terraform-provider-ct_v0.2.1
+    └── terraform-provider-matchbox_v0.2.2
+```
+
+In each Terraform working directory, set the version of each provider.
+
+```
+# providers.tf
+
+provider "matchbox" {
+  version = "0.2.2"
+  ...
+}
+
+provider "ct" {
+  version = "0.2.1"
+}
+```
+
+Run `terraform init` to ensure plugin version requirements are met. Verify `terraform plan` does not produce a diff, since the plugin versions should be the same as previously.
+
+```
+$ terraform init
+$ terraform plan
+```
+

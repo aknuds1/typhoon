@@ -12,7 +12,7 @@ Typhoon aims to be minimal and secure. We're running it ourselves after all.
 * Workloads run on worker nodes only, unless they tolerate the master taint
 * Kubernetes [Network Policy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) and Calico [NetworkPolicy](https://docs.projectcalico.org/latest/reference/calicoctl/resources/networkpolicy) support [^1]
 
-[^1]: Requires `networking = "calico"`. Calico is the default on AWS, bare-metal, and Google Cloud. Azure and Digital Ocean are limited to `networking = "flannel"`.
+[^1]: Requires `networking = "calico"`. Calico is the default on all platforms (AWS, Azure, bare-metal, DigitalOcean, and Google Cloud).
 
 **Hosts**
 
@@ -42,9 +42,7 @@ Typhoon limits exposure to many security threats, but it is not a silver bullet.
 
 ## OpenPGP Signing
 
-Typhoon uses upstream container images and binaries. We do not distribute artifacts of our own, except where required for system container images ([etcd](https://quay.io/repository/poseidon/etcd), [kubelet](https://quay.io/repository/poseidon/kubelet), [bootkube](https://quay.io/repository/poseidon/bootkube)) for Fedora Atomic only.
-
-If you find artifacts claiming to be from Typhoon, please send a note.
+Typhoon uses upstream container images and binaries. We do not distribute artifacts of our own. If you find artifacts claiming to be from Typhoon, please send a note.
 
 ## Disclosures
 

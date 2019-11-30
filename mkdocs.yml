@@ -59,11 +59,9 @@ nav:
     - 'Bare-Metal': 'cl/bare-metal.md'
     - 'Digital Ocean': 'cl/digital-ocean.md'
     - 'Google Cloud': 'cl/google-cloud.md'
-  - 'Fedora Atomic':
-    - 'AWS': 'atomic/aws.md'
-    - 'Bare-Metal': 'atomic/bare-metal.md'
-    - 'Digital Ocean': 'atomic/digital-ocean.md'
-    - 'Google Cloud': 'atomic/google-cloud.md'
+  - 'Fedora CoreOS': 
+    - 'AWS': 'fedora-coreos/aws.md'
+    - 'Bare-Metal': 'fedora-coreos/bare-metal.md'
   - 'Topics':
     - 'Maintenance': 'topics/maintenance.md'
     - 'Hardware': 'topics/hardware.md'
@@ -77,7 +75,6 @@ nav:
   - 'Addons':
     - 'Overview': 'addons/overview.md'
     - 'CLUO': 'addons/cluo.md'
-    - 'Heapster': 'addons/heapster.md'
     - 'Nginx Ingress': 'addons/ingress.md'
     - 'Prometheus': 'addons/prometheus.md'
     - 'Grafana': 'addons/grafana.md'
